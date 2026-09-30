@@ -1,6 +1,8 @@
 import axios from 'axios'
 
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
+// By default the API is same-origin: the Vite dev server proxies /api to Django
+// (see vite.config.js). Set VITE_API_URL to call a separately hosted backend.
+export const API_URL = import.meta.env.VITE_API_URL || '/api'
 
 const ACCESS_KEY = 'bms_access'
 const REFRESH_KEY = 'bms_refresh'

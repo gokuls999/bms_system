@@ -151,6 +151,9 @@ SIMPLE_JWT = {
 
 # --- CORS ---------------------------------------------------------------------
 CORS_ALLOWED_ORIGINS = env_list("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173")
+if DEBUG:
+    # Allow the dev frontend when opened from another device on a private LAN.
+    CORS_ALLOWED_ORIGIN_REGEXES = [r"^http://(192\.168|10|172\.(1[6-9]|2\d|3[01]))(\.\d{1,3}){2,3}:5173$"]
 
 # --- Business settings --------------------------------------------------------
 LOW_STOCK_THRESHOLD = int(os.getenv("LOW_STOCK_THRESHOLD", "10"))
