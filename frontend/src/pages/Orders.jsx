@@ -30,14 +30,14 @@ export default function Orders() {
         <div className="toolbar">
           <div className="search-wrap">
             <Search size={16} />
-          </div>
             <input
               className="search"
-            type="search"
-            placeholder="Search customer, product or SKU…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+              type="search"
+              placeholder="Search customer, product or SKU…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <label className="inline-label">
             From <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
           </label>

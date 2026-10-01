@@ -204,14 +204,14 @@ export default function Customers() {
         <div className="toolbar">
           <div className="search-wrap">
             <Search size={16} />
-          </div>
             <input
               className="search"
-            type="search"
-            placeholder="Search name, email or phone…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+              type="search"
+              placeholder="Search name, email or phone…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status">
             <option value="">All statuses</option>
             <option value="active">Active</option>

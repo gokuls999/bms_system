@@ -592,3 +592,8 @@ h1 {
     flex-wrap: wrap;
   }
 }
+
+.search-wrap .search {
+  width: 100%;
+  max-width: none;
+}

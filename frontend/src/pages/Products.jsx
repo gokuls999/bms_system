@@ -242,14 +242,14 @@ export default function Products() {
         <div className="toolbar">
           <div className="search-wrap">
             <Search size={16} />
-          </div>
             <input
               className="search"
-            type="search"
-            placeholder="Search name, SKU or category…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
+              type="search"
+              placeholder="Search name, SKU or category…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
           <select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="Filter by category">
             <option value="">All categories</option>
             {categories.map((c) => (
