@@ -1,12 +1,18 @@
+import { AlertTriangle, IndianRupee, Package, Plus, ShoppingCart, UsersRound } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
 import { EmptyState, ErrorBanner, Loader } from '../components/ui'
 import { errorMessage, formatDate, formatDateTime, formatINR, formatINRCompact } from '../utils/format'
 
-function StatCard({ label, value, sub, tone }) {
+function StatCard({ label, value, sub, tone, icon: Icon }) {
   return (
     <div className={`stat-card ${tone ? `stat-${tone}` : ''}`}>
+      {Icon && (
+        <span className="stat-icon">
+          <Icon size={18} />
+        </span>
+      )}
       <span className="stat-label">{label}</span>
       <span className="stat-value">{value}</span>
       {sub && <span className="stat-sub">{sub}</span>}
@@ -45,23 +51,27 @@ export default function Dashboard() {
   return (
     <>
       <div className="page-header">
-        <h1>Dashboard</h1>
+        <div>
+          <h1>Dashboard</h1>
+          <p className="page-subtitle">Overview of customers, stock and sales.</p>
+        </div>
         <Link className="btn btn-primary" to="/orders/new">
-          + New order
+          <Plus size={16} /> New order
         </Link>
       </div>
 
       <div className="stats">
-        <StatCard label="Customers" value={data.total_customers} sub={`${data.active_customers} active`} />
-        <StatCard label="Products" value={data.total_products} />
+        <StatCard icon={UsersRound} label="Customers" value={data.total_customers} sub={`${data.active_customers} active`} />
+        <StatCard icon={Package} label="Products" value={data.total_products} />
         <StatCard
+          icon={AlertTriangle}
           label="Low stock"
           value={data.low_stock_count}
           sub={`≤ ${data.low_stock_threshold} units`}
           tone={data.low_stock_count ? 'warn' : undefined}
         />
-        <StatCard label="Orders" value={data.total_orders} />
-        <StatCard label="Total sales" value={formatINRCompact(data.total_sales)} sub={formatINR(data.total_sales)} tone="accent" />
+        <StatCard icon={ShoppingCart} label="Orders" value={data.total_orders} />
+        <StatCard icon={IndianRupee} label="Total sales" value={formatINRCompact(data.total_sales)} sub={formatINR(data.total_sales)} tone="accent" />
       </div>
 
       <div className="dash-grid">

@@ -1,3 +1,4 @@
+import { Plus, Search } from 'lucide-react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { EmptyState, ErrorBanner, Loader, Pagination } from '../components/ui'
@@ -17,15 +18,21 @@ export default function Orders() {
   return (
     <>
       <div className="page-header">
-        <h1>Order history</h1>
+        <div>
+          <h1>Order history</h1>
+          <p className="page-subtitle">All orders with totals and who created them.</p>
+        </div>
         <Link className="btn btn-primary" to="/orders/new">
-          + New order
+          <Plus size={16} /> New order
         </Link>
       </div>
       <div className="card">
         <div className="toolbar">
-          <input
-            className="search"
+          <div className="search-wrap">
+            <Search size={16} />
+          </div>
+            <input
+              className="search"
             type="search"
             placeholder="Search customer, product or SKU…"
             value={search}

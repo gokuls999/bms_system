@@ -1,3 +1,4 @@
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import api from '../api/client'
 import { useAuth } from '../auth/AuthContext'
@@ -133,14 +134,20 @@ export default function Users() {
   return (
     <>
       <div className="page-header">
-        <h1>Users</h1>
+        <div>
+          <h1>Users</h1>
+          <p className="page-subtitle">Accounts, roles and delete permission.</p>
+        </div>
         <button className="btn btn-primary" onClick={() => setEditing('new')}>
-          + Add user
+          <Plus size={16} /> Add user
         </button>
       </div>
       <div className="card">
         <div className="toolbar">
-          <input className="search" type="search" placeholder="Search users…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="search-wrap">
+            <Search size={16} />
+            <input className="search" type="search" placeholder="Search users…" value={search} onChange={(e) => setSearch(e.target.value)} />
+          </div>
         </div>
         <ErrorBanner message={error} />
         {loading && !data.results.length ? (
@@ -174,7 +181,7 @@ export default function Users() {
                     <td className="hide-md muted">{formatDate(u.date_joined)}</td>
                     <td className="actions">
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditing(u)}>
-                        Edit
+                        <Pencil size={14} /> Edit
                       </button>
                       <button
                         className="btn btn-ghost btn-sm text-danger"
@@ -182,7 +189,7 @@ export default function Users() {
                         title={u.id === me.id ? 'You cannot delete yourself' : undefined}
                         onClick={() => setDeleting(u)}
                       >
-                        Delete
+                        <Trash2 size={14} /> Delete
                       </button>
                     </td>
                   </tr>

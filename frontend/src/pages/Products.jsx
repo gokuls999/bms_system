@@ -1,3 +1,4 @@
+import { Pencil, Plus, Search, Tags, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import api from '../api/client'
@@ -167,7 +168,7 @@ function CategoryManager({ categories, canDelete, onClose, onChanged }) {
             <span className="muted">{c.product_count} products</span>
             {canDelete && (
               <button className="btn btn-ghost btn-sm text-danger" onClick={() => remove(c)} disabled={c.product_count > 0}>
-                Delete
+                <Trash2 size={14} /> Delete
               </button>
             )}
           </li>
@@ -223,21 +224,27 @@ export default function Products() {
   return (
     <>
       <div className="page-header">
-        <h1>Products</h1>
+        <div>
+          <h1>Products</h1>
+          <p className="page-subtitle">Catalogue, pricing and stock levels.</p>
+        </div>
         <div className="header-actions">
           <button className="btn btn-ghost" onClick={() => setManagingCategories(true)}>
-            Categories
+            <Tags size={16} /> Categories
           </button>
           <button className="btn btn-primary" onClick={() => setEditing('new')} disabled={!categories.length}>
-            + Add product
+            <Plus size={16} /> Add product
           </button>
         </div>
       </div>
 
       <div className="card">
         <div className="toolbar">
-          <input
-            className="search"
+          <div className="search-wrap">
+            <Search size={16} />
+          </div>
+            <input
+              className="search"
             type="search"
             placeholder="Search name, SKU or category…"
             value={search}
@@ -297,11 +304,11 @@ export default function Products() {
                     </td>
                     <td className="actions">
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditing(p)}>
-                        Edit
+                        <Pencil size={14} /> Edit
                       </button>
                       {canDelete && (
                         <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeleting(p)}>
-                          Delete
+                          <Trash2 size={14} /> Delete
                         </button>
                       )}
                     </td>

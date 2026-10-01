@@ -1,3 +1,4 @@
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
@@ -190,16 +191,22 @@ export default function Customers() {
   return (
     <>
       <div className="page-header">
-        <h1>Customers</h1>
+        <div>
+          <h1>Customers</h1>
+          <p className="page-subtitle">Manage customer records and their status.</p>
+        </div>
         <button className="btn btn-primary" onClick={() => setEditing('new')}>
-          + Add customer
+          <Plus size={16} /> Add customer
         </button>
       </div>
 
       <div className="card">
         <div className="toolbar">
-          <input
-            className="search"
+          <div className="search-wrap">
+            <Search size={16} />
+          </div>
+            <input
+              className="search"
             type="search"
             placeholder="Search name, email or phone…"
             value={search}
@@ -244,7 +251,7 @@ export default function Customers() {
                     <td className="hide-md muted">{formatDate(c.created_at)}</td>
                     <td className="actions">
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditing(c)}>
-                        Edit
+                        <Pencil size={14} /> Edit
                       </button>
                       {c.status === 'active' ? (
                         <button className="btn btn-ghost btn-sm" onClick={() => setConfirm({ type: 'deactivate', customer: c })}>
@@ -260,7 +267,7 @@ export default function Customers() {
                           className="btn btn-ghost btn-sm text-danger"
                           onClick={() => setConfirm({ type: 'delete', customer: c })}
                         >
-                          Delete
+                          <Trash2 size={14} /> Delete
                         </button>
                       )}
                     </td>
