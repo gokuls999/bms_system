@@ -5,6 +5,7 @@ import App from './App'
 import { AuthProvider } from './auth/AuthContext'
 import { ToastProvider } from './components/Toast'
 import './index.css'
+import './refresh.css'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
