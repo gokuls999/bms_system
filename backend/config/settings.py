@@ -129,8 +129,9 @@ STORAGES = {
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-    SESSION_COOKIE_SECURE = True
-    CSRF_COOKIE_SECURE = True
+# Secure (HTTPS-only) cookies in production; set DJANGO_SECURE_COOKIES=False to run
+# the production stack locally over plain http://localhost.
+SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = env_bool("DJANGO_SECURE_COOKIES", not DEBUG)
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- REST framework -----------------------------------------------------------

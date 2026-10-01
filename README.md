@@ -2,9 +2,15 @@
 
 A full-stack web app for managing **customers**, **products**, and **orders**. It has JWT authentication, Admin/Staff roles, a dashboard, and order creation that stays correct when several users buy the same stock at once.
 
-**Live demo (AWS EC2):** https://bms.52-62-250-109.sslip.io. Log in as `admin` / `Admin@12345` or `staff` / `Staff@12345`. Deployment details are in [section 11](#11-deployment-aws).
+| | |
+|---|---|
+| **Live demo** (AWS EC2) | https://bms.52-62-250-109.sslip.io |
+| **API docs** (Swagger) | https://bms.52-62-250-109.sslip.io/api/docs/ |
+| **Admin login** | `admin` / `Admin@12345` |
+| **Staff login** | `staff` / `Staff@12345` |
+| **Run it yourself** | [Quick start](#quick-start-5-minutes-no-database-setup) (5 minutes) or [Docker](#option-c-full-stack-with-docker) |
 
-**Interactive API docs (Swagger):** https://bms.52-62-250-109.sslip.io/api/docs/
+Deployment details are in [section 11](#11-deployment-aws).
 
 ---
 
@@ -50,31 +56,56 @@ Self-registration always creates a **Staff** account. Only an Admin can grant th
 
 ## 3. Installation
 
-**Prerequisites:** Python 3.12+, Node.js 20.19+ (or 22+), PostgreSQL 14+.
+**Prerequisites:** Python 3.12+, Node.js 20.19+ (or 22+). PostgreSQL 14+ is recommended (SQLite works for a quick look). On Windows, use `copy` instead of `cp` and `.venv\Scripts\activate` instead of `source .venv/bin/activate`.
+
+### Quick start (5 minutes, no database setup)
+
+Uses SQLite so nothing else needs installing. Everything works except the two PostgreSQL-only concurrency tests, which are skipped.
 
 ```bash
 git clone https://github.com/gokuls999/bms_system.git
 cd bms_system
-```
 
-### Backend
-
-```bash
+# Terminal 1 - backend (http://localhost:8000)
 cd backend
 python -m venv .venv
-# Windows:  .venv\Scripts\activate
-# macOS/Linux: source .venv/bin/activate
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-cp .env.example .env          # then edit DB credentials (see below)
-```
+cp .env.example .env               # Windows: copy .env.example .env
+# edit .env and set: DB_ENGINE=sqlite
+python manage.py migrate
+python manage.py seed_demo         # demo users + sample data
+python manage.py runserver
 
-### Frontend
-
-```bash
+# Terminal 2 - frontend (http://localhost:5173)
 cd frontend
 npm install
-cp .env.example .env          # optional - defaults to http://localhost:8000/api
+npm run dev
 ```
+
+Open **http://localhost:5173** and log in as `admin` / `Admin@12345`. The frontend dev server forwards `/api` to the backend on port 8000, so no extra configuration is needed.
+
+### Option B: with PostgreSQL (recommended)
+
+Same as the quick start, but in `backend/.env` keep `DB_ENGINE=postgres` and set `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST` and `DB_PORT` (see [section 4](#4-environment-variables)). Create the database first (see [section 5](#5-database-setup)). With PostgreSQL, `python manage.py test` also runs the concurrency tests.
+
+### Option C: full stack with Docker
+
+Runs the same production stack as the live site (PostgreSQL, Django + Gunicorn, Caddy serving the built React app) with one command. Requires Docker Desktop.
+
+```bash
+cd deploy
+cp .env.example .env
+# edit .env for local use:
+#   SITE_ADDRESS=:80
+#   DJANGO_ALLOWED_HOSTS=localhost,127.0.0.1
+#   CSRF_TRUSTED_ORIGINS=http://localhost
+#   DJANGO_SECURE_COOKIES=False
+#   DJANGO_SECRET_KEY and DB_PASSWORD = any random strings
+docker compose up -d --build
+```
+
+Open **http://localhost**. Tables are created and demo data is loaded automatically on first start.
 
 ---
 
@@ -87,6 +118,8 @@ cp .env.example .env          # optional - defaults to http://localhost:8000/api
 | `DJANGO_SECRET_KEY` | dev key | **Set a long random value in production** |
 | `DJANGO_DEBUG` | `True` | Debug mode |
 | `DJANGO_ALLOWED_HOSTS` | `localhost,127.0.0.1` | Comma-separated hosts |
+| `CSRF_TRUSTED_ORIGINS` | *(empty)* | Full origins (e.g. `https://bms.example.com`) allowed to post forms; needed behind a proxy in production |
+| `DJANGO_SECURE_COOKIES` | `True` when not in debug | HTTPS-only cookies; set `False` to run the production stack over plain `http://localhost` |
 | `DB_ENGINE` | `postgres` | `postgres`, or `sqlite` for a zero-setup fallback (concurrency test is skipped on SQLite) |
 | `DB_NAME` | `bms` | PostgreSQL database name |
 | `DB_USER` | `postgres` | PostgreSQL user |
@@ -102,7 +135,7 @@ cp .env.example .env          # optional - defaults to http://localhost:8000/api
 
 | Variable | Default | Description |
 |---|---|---|
-| `VITE_API_URL` | `http://localhost:8000/api` | Base URL of the backend API |
+| `VITE_API_URL` | *(unset)* | Leave unset: the app calls `/api` on its own origin, which the Vite dev server proxies to `http://127.0.0.1:8000` and Caddy proxies in production. Set it only to call a backend hosted elsewhere |
 
 ---
 
@@ -273,16 +306,18 @@ npm run dev          # http://localhost:5173
 npm run build        # production build in dist/
 ```
 
-The frontend only talks to the backend through the REST API (Axios, `src/api/client.js`). It never accesses the database.
+Open **http://localhost:5173** (the backend must be running on port 8000). The frontend only talks to the backend through the REST API (Axios, `src/api/client.js`; `/api` is proxied by the dev server). It never accesses the database. To test from a phone on the same Wi-Fi, run `npx vite --host` and open `http://<your-PC-IP>:5173`.
 
-**Pages:** Login, Register, Dashboard, Customers, Products, New Order, Order History, Order Detail, and Users (Admin only). The layout is responsive: on tablets and phones the sidebar collapses into a hamburger menu and tables hide less important columns.
+**Pages:** Login, Register, Dashboard, Customers, Products, New Order, Order History, Order Detail, and Users (Admin only).
+
+**UI:** React 19 with reusable components (a searchable `Combobox` for customers and products, row action menus, side-panel details, typed confirmation for deletes) and lucide icons. Fully responsive: on tablets the layout reflows, and on phones there is a bottom tab bar, a compact header and card-style order lines.
 
 ## 8. How to run the backend
 
 ```bash
 cd backend
 # activate the virtualenv first
-python manage.py runserver        # http://localhost:8000
+python manage.py runserver        # http://localhost:8000  (API docs: /api/docs/)
 python manage.py test             # run the test suite
 ```
 
