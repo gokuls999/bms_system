@@ -627,10 +627,8 @@ td.actions {
   box-shadow: var(--shadow);
 }
 .menu {
-  position: absolute;
-  right: 0;
-  top: calc(100% + 4px);
-  z-index: 40;
+  position: fixed;
+  z-index: 60;
   min-width: 190px;
   padding: 0.3rem;
   background: #fff;
@@ -670,11 +668,6 @@ td.actions {
   height: 1px;
   background: var(--border);
   margin: 0.3rem 0.2rem;
-}
-.table tbody tr:last-child .menu,
-.table tbody tr:nth-last-child(2) .menu {
-  top: auto;
-  bottom: calc(100% + 4px);
 }
 
 /* Clickable rows */
