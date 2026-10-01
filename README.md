@@ -2,6 +2,8 @@
 
 A full-stack web app for managing **customers**, **products**, and **orders**. It has JWT authentication, Admin/Staff roles, a dashboard, and order creation that stays correct when several users buy the same stock at once.
 
+**Live demo (AWS EC2):** https://bms.52-62-250-109.sslip.io. Log in as `admin` / `Admin@12345` or `staff` / `Staff@12345`. Deployment details are in [section 11](#11-deployment-aws).
+
 ---
 
 ## 1. Project overview
@@ -344,3 +346,65 @@ bms_system/
         ├── hooks/            useList, usePage, useDebounce
         └── pages/            Dashboard, Customers, Products, NewOrder, Orders, OrderDetail, Users, Login, Register
 ```
+
+---
+
+## 11. Deployment (AWS)
+
+The live demo runs on a single **AWS EC2** instance. Docker Compose runs three containers on it:
+
+```
+Browser ──HTTPS──> Elastic IP 52.62.250.109  (EC2 t3.micro, Ubuntu 24.04, 20 GB gp3)
+                     │  Security group: 80/443 open, 22 for SSH
+                     └─ web      Caddy 2: automatic Let's Encrypt HTTPS
+                          ├─ /                  → React build (static files)
+                          └─ /api, /admin, /static → backend
+                        backend  Django + Gunicorn (migrates and seeds on start)
+                        db       PostgreSQL 16 (data on a named Docker volume)
+```
+
+| AWS service | Purpose |
+|---|---|
+| EC2 (t3.micro) | Runs the whole stack with Docker Compose |
+| Elastic IP | Fixed public address, so the hostname never changes |
+| Security group | Firewall: HTTP and HTTPS open to the internet, SSH for administration |
+| EBS gp3 (20 GB) | Instance disk, including the Postgres volume |
+| AWS Budgets | Zero-spend alert, so any real charge sends an email |
+
+**Hostname.** `bms.52-62-250-109.sslip.io` is a free wildcard DNS name that resolves to the Elastic IP. Caddy obtains a Let's Encrypt certificate for it automatically. To switch to a custom domain, see below.
+
+**Files** (all in [`deploy/`](deploy/)):
+- `docker-compose.yml`: the db, backend and web services, with a healthcheck and persistent volumes;
+- `web.Dockerfile`: a multi-stage build (Node builds the React app, then Caddy serves it);
+- `Caddyfile`: HTTPS, the API reverse proxy and the single-page-app fallback;
+- `setup-ec2.sh`: one-time server setup (swap, Docker, clone, generated secrets, `docker compose up`);
+- `../backend/Dockerfile` and `docker-entrypoint.sh`: Gunicorn plus whitenoise, running `migrate` and `seed_demo` on start.
+
+### Deploy from scratch
+
+1. Launch an Ubuntu 24.04 EC2 instance (t3.micro, 20 GB), open ports 80 and 443 in its security group, and associate an Elastic IP.
+2. Connect with EC2 Instance Connect and run:
+   ```bash
+   curl -fsSL https://raw.githubusercontent.com/gokuls999/bms_system/main/deploy/setup-ec2.sh | bash
+   ```
+3. The script prints the site address. Secrets (Django key, database password) are generated into `deploy/.env` on the server and never committed.
+
+### Update after a push
+
+```bash
+cd ~/bms_system && git pull && cd deploy && sudo docker compose up -d --build
+```
+
+### Run the test suite on the server (PostgreSQL)
+
+```bash
+cd ~/bms_system/deploy && sudo docker compose exec backend python manage.py test
+```
+
+On PostgreSQL all 38 tests run, including the two concurrency tests that SQLite skips.
+
+### Use a custom domain
+
+1. At your DNS provider, add an **A record** pointing the domain (e.g. `bms.example.com`) to the Elastic IP.
+2. On the server, edit `deploy/.env`: change `SITE_ADDRESS`, `DJANGO_ALLOWED_HOSTS` and `CSRF_TRUSTED_ORIGINS` to the new domain.
+3. Run `sudo docker compose up -d`. Caddy issues the new certificate automatically.
