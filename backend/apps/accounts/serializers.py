@@ -5,6 +5,19 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 User = get_user_model()
 
+DUPLICATE_EMAIL = "A user with this email already exists."
+
+
+def validate_unique_email(value, instance=None):
+    """Case-insensitive email uniqueness check with a friendly message."""
+    value = value.strip().lower()
+    qs = User.objects.filter(email__iexact=value)
+    if instance is not None:
+        qs = qs.exclude(pk=instance.pk)
+    if qs.exists():
+        raise serializers.ValidationError(DUPLICATE_EMAIL)
+    return value
+
 
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
@@ -25,11 +38,11 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = User
         fields = ["id", "username", "email", "first_name", "last_name", "password", "role"]
         read_only_fields = ["id", "role"]
+        # Uniqueness is checked case-insensitively in validate_email, with our own message.
+        extra_kwargs = {"email": {"validators": []}}
 
     def validate_email(self, value):
-        if User.objects.filter(email__iexact=value).exists():
-            raise serializers.ValidationError("A user with this email already exists.")
-        return value.lower()
+        return validate_unique_email(value)
 
     def validate(self, attrs):
         candidate = User(**{k: v for k, v in attrs.items() if k != "password"})
@@ -50,6 +63,10 @@ class AdminUserSerializer(UserSerializer):
 
     class Meta(UserSerializer.Meta):
         fields = UserSerializer.Meta.fields + ["password"]
+        extra_kwargs = {"email": {"validators": []}}
+
+    def validate_email(self, value):
+        return validate_unique_email(value, self.instance)
 
     def validate_password(self, value):
         try:

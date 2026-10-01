@@ -23,6 +23,15 @@ class AuthTests(BaseAPITestCase):
         self.assertEqual(res.data["code"], "validation_error")
         self.assertIn("email", res.data["errors"])
 
+    def test_duplicate_email_message_case_insensitive(self):
+        res = self.anon_client.post(
+            "/api/auth/register",
+            {"username": "other", "email": "STAFF@test.local", "password": "Sup3r!Secret"},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["errors"]["email"], ["A user with this email already exists."])
+
     def test_login_returns_tokens_and_user(self):
         res = self.anon_client.post(
             "/api/auth/login", {"username": "admin", "password": "Str0ng!Pass"}, format="json"

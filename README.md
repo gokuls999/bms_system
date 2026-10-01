@@ -24,7 +24,8 @@ A full-stack web app for managing **customers**, **products**, and **orders**. I
 | View dashboard, customers, products, orders | ✅ | ✅ |
 | Create / edit / deactivate / delete customers | ✅ | ✅ |
 | Create orders | ✅ | ✅ |
-| Create / edit / delete products and categories | ✅ | ❌ (read-only) |
+| Create / edit products and categories | ✅ | ✅ |
+| Delete products and categories | ✅ | ❌ |
 | Manage users (incl. **delete users**) | ✅ | ❌ |
 
 Self-registration always creates a **Staff** account. Only an Admin can grant the Admin role.
@@ -167,7 +168,7 @@ Trailing slashes on the auth and dashboard URLs are optional.
 | DELETE | `/customers/{id}/` | `204`; **`409 protected`** if the customer has orders (deactivate instead) |
 | POST | `/customers/{id}/deactivate/` · `/activate/` | soft status change |
 
-### Categories & products (read: all; write: Admin)
+### Categories & products (read, create, edit: Admin and Staff; delete: Admin only)
 
 | Method | Endpoint | Notes |
 |---|---|---|

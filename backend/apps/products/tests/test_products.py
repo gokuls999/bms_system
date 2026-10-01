@@ -27,10 +27,23 @@ class ProductAPITests(BaseAPITestCase):
 
         self.assertEqual(self.admin_client.delete(f"/api/products/{pid}/").status_code, status.HTTP_204_NO_CONTENT)
 
-    def test_staff_read_only(self):
-        make_product()
-        self.assertEqual(self.staff_client.get("/api/products/").status_code, status.HTTP_200_OK)
+    def test_staff_can_create_and_edit_but_not_delete(self):
         res = self.staff_client.post("/api/products/", self.payload(), format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
+        pid = res.data["id"]
+
+        res = self.staff_client.patch(f"/api/products/{pid}/", {"price": "700.00"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        res = self.staff_client.delete(f"/api/products/{pid}/")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data["detail"], "Only administrators can delete this resource.")
+        self.assertTrue(Product.objects.filter(pk=pid).exists())
+
+    def test_staff_categories_create_but_not_delete(self):
+        res = self.staff_client.post("/api/categories/", {"name": "Toys"}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        res = self.staff_client.delete(f"/api/categories/{res.data['id']}/")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_duplicate_sku_case_insensitive(self):

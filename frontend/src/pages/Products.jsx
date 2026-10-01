@@ -107,7 +107,7 @@ function ProductForm({ product, categories, onClose, onSaved }) {
   )
 }
 
-function CategoryManager({ categories, onClose, onChanged }) {
+function CategoryManager({ categories, canDelete, onClose, onChanged }) {
   const notify = useToast()
   const [name, setName] = useState('')
   const [error, setError] = useState('')
@@ -147,9 +147,11 @@ function CategoryManager({ categories, onClose, onChanged }) {
           <li key={c.id}>
             <span>{c.name}</span>
             <span className="muted">{c.product_count} products</span>
-            <button className="btn btn-ghost btn-sm text-danger" onClick={() => remove(c)} disabled={c.product_count > 0}>
-              Delete
-            </button>
+            {canDelete && (
+              <button className="btn btn-ghost btn-sm text-danger" onClick={() => remove(c)} disabled={c.product_count > 0}>
+                Delete
+              </button>
+            )}
           </li>
         ))}
       </ul>
@@ -204,18 +206,15 @@ export default function Products() {
     <>
       <div className="page-header">
         <h1>Products</h1>
-        {isAdmin && (
-          <div className="header-actions">
-            <button className="btn btn-ghost" onClick={() => setManagingCategories(true)}>
-              Categories
-            </button>
-            <button className="btn btn-primary" onClick={() => setEditing('new')} disabled={!categories.length}>
-              + Add product
-            </button>
-          </div>
-        )}
+        <div className="header-actions">
+          <button className="btn btn-ghost" onClick={() => setManagingCategories(true)}>
+            Categories
+          </button>
+          <button className="btn btn-primary" onClick={() => setEditing('new')} disabled={!categories.length}>
+            + Add product
+          </button>
+        </div>
       </div>
-      {!isAdmin && <div className="alert alert-info">Staff have read-only access to products. Ask an admin to make changes.</div>}
 
       <div className="card">
         <div className="toolbar">
@@ -257,7 +256,7 @@ export default function Products() {
                   <th className="num">Price</th>
                   <th className="num">Stock</th>
                   <th className="hide-sm">Status</th>
-                  {isAdmin && <th className="actions-col">Actions</th>}
+                  <th className="actions-col">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -278,16 +277,16 @@ export default function Products() {
                     <td className="hide-sm">
                       <StatusBadge status={p.status} />
                     </td>
-                    {isAdmin && (
-                      <td className="actions">
-                        <button className="btn btn-ghost btn-sm" onClick={() => setEditing(p)}>
-                          Edit
-                        </button>
+                    <td className="actions">
+                      <button className="btn btn-ghost btn-sm" onClick={() => setEditing(p)}>
+                        Edit
+                      </button>
+                      {isAdmin && (
                         <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeleting(p)}>
                           Delete
                         </button>
-                      </td>
-                    )}
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -325,11 +324,12 @@ export default function Products() {
       {managingCategories && (
         <CategoryManager
           categories={categories}
+          canDelete={isAdmin}
           onClose={() => setManagingCategories(false)}
           onChanged={loadCategories}
         />
       )}
-      {!categories.length && isAdmin && !loading && (
+      {!categories.length && !loading && (
         <p className="muted">Create a category first to start adding products.</p>
       )}
     </>
