@@ -4,9 +4,15 @@ from django.conf import settings
 from django.db import IntegrityError, transaction
 from rest_framework import serializers
 
+from apps.core.exceptions import Conflict
+
 from .models import Category, Product
 
 DUPLICATE_SKU = "A product with this SKU already exists."
+STALE_PRODUCT = (
+    "This product was changed by someone else since you opened it (for example, an order reduced "
+    "its stock). Reload it and try again."
+)
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -31,6 +37,10 @@ class CategorySerializer(serializers.ModelSerializer):
 class ProductSerializer(serializers.ModelSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True)
     is_low_stock = serializers.SerializerMethodField()
+    # Optimistic locking: clients send back the `updated_at` they loaded. If the
+    # row changed in the meantime (e.g. an order reduced stock), the save is
+    # rejected with 409 instead of silently overwriting the newer stock value.
+    expected_updated_at = serializers.DateTimeField(write_only=True, required=False)
 
     class Meta:
         model = Product
@@ -46,6 +56,7 @@ class ProductSerializer(serializers.ModelSerializer):
             "is_low_stock",
             "created_at",
             "updated_at",
+            "expected_updated_at",
         ]
         read_only_fields = ["id", "created_at", "updated_at"]
         extra_kwargs = {
@@ -102,7 +113,17 @@ class ProductSerializer(serializers.ModelSerializer):
             raise
 
     def create(self, validated_data):
+        validated_data.pop("expected_updated_at", None)
         return self._save_guarding_sku(super().create, validated_data)
 
     def update(self, instance, validated_data):
-        return self._save_guarding_sku(super().update, instance, validated_data)
+        expected = validated_data.pop("expected_updated_at", None)
+
+        def locked_update():
+            # Lock the row so no order can change it between the check and the write.
+            current = Product.objects.select_for_update().get(pk=instance.pk)
+            if expected is not None and current.updated_at != expected:
+                raise Conflict(STALE_PRODUCT, code="stale_product")
+            return super(ProductSerializer, self).update(current, validated_data)
+
+        return self._save_guarding_sku(locked_update)

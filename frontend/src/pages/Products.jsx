@@ -17,6 +17,8 @@ function ProductForm({ product, categories, onClose, onSaved }) {
   const [errors, setErrors] = useState({})
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
+  // Version of the product this form is based on (optimistic locking).
+  const [version, setVersion] = useState(product?.updated_at)
   const set = (key) => (e) => setForm({ ...form, [key]: e.target.value })
 
   const submit = async (e) => {
@@ -39,11 +41,27 @@ function ProductForm({ product, categories, onClose, onSaved }) {
       status: form.status,
     }
     try {
-      if (product) await api.put(`/products/${product.id}/`, payload)
+      if (product) await api.put(`/products/${product.id}/`, { ...payload, expected_updated_at: version })
       else await api.post('/products/', payload)
       notify(product ? 'Product updated.' : 'Product created.')
       onSaved()
     } catch (err) {
+      if (err.response?.data?.code === 'stale_product') {
+        // Someone else (e.g. an order) changed the product meanwhile: pull the
+        // latest stock and version, keep the user's other edits, ask to re-check.
+        try {
+          const { data: fresh } = await api.get(`/products/${product.id}/`)
+          setForm((current) => ({ ...current, stock_quantity: fresh.stock_quantity }))
+          setVersion(fresh.updated_at)
+          setError(
+            `This product changed while you were editing. Stock is now ${fresh.stock_quantity}. ` +
+              'Your other changes are kept - review and save again.',
+          )
+        } catch {
+          setError(errorMessage(err))
+        }
+        return
+      }
       setErrors(fieldErrors(err))
       setError(errorMessage(err))
     } finally {

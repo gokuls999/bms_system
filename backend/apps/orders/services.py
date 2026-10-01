@@ -16,6 +16,8 @@ rejected with 409 insufficient_stock.
 * The decrement itself uses an F() expression (UPDATE ... SET stock = stock - n).
 * A CHECK (stock_quantity >= 0) constraint on the table is the final safety net:
   even a code path that forgot to lock could never persist negative inventory.
+* Product edits use optimistic locking (see ProductSerializer.update): an edit
+  form opened before an order reduced stock cannot write the old stock back.
 """
 
 from collections import OrderedDict
@@ -24,6 +26,7 @@ from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
 from django.db.models import F
+from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 
 from apps.core.exceptions import InsufficientStock
@@ -163,7 +166,9 @@ def create_order(*, customer, items, discount_type=Order.DiscountType.AMOUNT, di
                 for pid, qty in quantities.items()
             ]
         )
+        # Bumping updated_at lets open product-edit forms detect that stock changed.
+        now = timezone.now()
         for pid, qty in quantities.items():
-            Product.objects.filter(pk=pid).update(stock_quantity=F("stock_quantity") - qty)
+            Product.objects.filter(pk=pid).update(stock_quantity=F("stock_quantity") - qty, updated_at=now)
 
     return order

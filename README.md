@@ -320,6 +320,12 @@ With stock = 5, **User A orders 4** and **User B orders 3** at the same moment. 
 
 I chose pessimistic locking over optimistic versioning because an order is a short transaction that often touches several rows, and blocking briefly is simpler and fairer than retry loops. Two alternatives were considered: a single conditional `UPDATE … WHERE stock >= n` works for one product but makes multi-product orders awkward to report and roll back, and `SERIALIZABLE` isolation would need retry handling for every request.
 
+### Edits racing with orders (optimistic locking)
+
+Row locks protect order-versus-order races. A different race is an admin editing a product while an order reduces its stock: the edit form still holds the old stock value and would write it back on save (a "lost update"), so stock would show units that no longer exist.
+
+Product edits are therefore **optimistically locked**. The edit form sends back the product's `updated_at` (as `expected_updated_at`). The server locks the row, and if `updated_at` changed since the form was opened (orders bump it when they reduce stock), it returns **`409 stale_product`** instead of overwriting. The UI then reloads the current stock, keeps the user's other edits and asks them to review and save again. The test `test_stale_edit_after_order_is_rejected` reproduces the exact scenario.
+
 ### Other decisions
 
 - **Server-authoritative pricing.** The client sends only product IDs and quantities. Prices, subtotal, discount and total are always computed on the server with `Decimal` and `ROUND_HALF_UP`. The React page shows a live preview using the same formula, and `/orders/preview/` exposes the server calculation.

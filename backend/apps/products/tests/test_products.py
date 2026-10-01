@@ -69,6 +69,38 @@ class ProductAPITests(BaseAPITestCase):
         self.assertIn("stock_quantity", res.data["errors"])
         self.assertIn("price", res.data["errors"])
 
+    def test_stale_edit_after_order_is_rejected(self):
+        from apps.core.testing import make_customer
+        from apps.orders.services import create_order
+
+        product = make_product(category=self.category, stock=4)
+        loaded = self.admin_client.get(f"/api/products/{product.pk}/").data  # admin opens the edit form
+
+        create_order(customer=make_customer(), items=[{"product": product.pk, "quantity": 3}])  # stock 4 -> 1
+
+        res = self.admin_client.put(
+            f"/api/products/{product.pk}/",
+            {**self.payload(sku=loaded["sku"], stock_quantity=loaded["stock_quantity"], price="650.00"),
+             "expected_updated_at": loaded["updated_at"]},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_409_CONFLICT)
+        self.assertEqual(res.data["code"], "stale_product")
+        product.refresh_from_db()
+        self.assertEqual(product.stock_quantity, 1)  # the stale "4" was NOT written back
+
+    def test_edit_with_current_version_succeeds(self):
+        product = make_product(category=self.category, stock=4)
+        loaded = self.admin_client.get(f"/api/products/{product.pk}/").data
+        res = self.admin_client.patch(
+            f"/api/products/{product.pk}/",
+            {"price": "650.00", "expected_updated_at": loaded["updated_at"]},
+            format="json",
+        )
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
+        self.assertNotEqual(res.data["updated_at"], loaded["updated_at"])
+        self.assertNotIn("expected_updated_at", res.data)
+
     def test_unknown_category_message(self):
         res = self.admin_client.post("/api/products/", self.payload(category=99999), format="json")
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
