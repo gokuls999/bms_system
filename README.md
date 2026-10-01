@@ -356,6 +356,12 @@ With stock = 5, **User A orders 4** and **User B orders 3** at the same moment. 
 
 For orders I chose pessimistic locking over optimistic versioning because an order is a short transaction that often touches several rows, and blocking briefly is simpler and fairer than retry loops. Two alternatives were considered: a single conditional `UPDATE … WHERE stock >= n` works for one product but makes multi-product orders awkward to report and roll back, and `SERIALIZABLE` isolation would need retry handling for every request.
 
+### Try it yourself on the live site
+
+**Script (true simultaneity):** `python scripts/concurrency_demo.py` (standard library only; add a URL argument to target a local backend). It logs in as admin (User A) and staff (User B), sets a dedicated demo product to stock 5, fires "order 4" and "order 3" at the same instant, and prints the outcome: exactly one `201 Created`, the other `409 insufficient_stock`, final stock never negative.
+
+**In the browser (two users):** open the live site in a normal window as `admin` and in a private/incognito window as `staff`. In both, start a **New order** for the same product with only a few units left (the order screen shows the available stock). Create the larger order in one window, then the other: the second is rejected with *"Insufficient stock (requested X, available Y)"*, and the screen updates the available quantity, even though that window still showed the old stock. The stock check happens on the server inside the locked transaction, never in the browser.
+
 ### Edits racing with orders (optimistic locking)
 
 Row locks protect order-versus-order races. A different race is an admin editing a product while an order reduces its stock: the edit form still holds the old stock value and would write it back on save (a "lost update"), so stock would show units that no longer exist.
