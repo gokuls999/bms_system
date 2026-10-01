@@ -69,6 +69,11 @@ class ProductAPITests(BaseAPITestCase):
         self.assertIn("stock_quantity", res.data["errors"])
         self.assertIn("price", res.data["errors"])
 
+    def test_unknown_category_message(self):
+        res = self.admin_client.post("/api/products/", self.payload(category=99999), format="json")
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["errors"]["category"], ["Selected category does not exist."])
+
     def test_search_category_filter_low_stock(self):
         other = Category.objects.create(name="Furniture")
         make_product(name="Wireless Mouse", category=self.category, stock=50)

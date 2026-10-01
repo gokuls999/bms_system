@@ -52,6 +52,12 @@ class ProductSerializer(serializers.ModelSerializer):
             # We validate uniqueness ourselves (case-insensitively), so drop DRF's
             # auto-generated case-sensitive UniqueValidator.
             "sku": {"validators": []},
+            "category": {
+                "error_messages": {
+                    "does_not_exist": "Selected category does not exist.",
+                    "incorrect_type": "Select a valid category.",
+                }
+            },
             "stock_quantity": {
                 "min_value": 0,
                 "error_messages": {"min_value": "Stock quantity cannot be negative."},
