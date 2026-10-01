@@ -51,7 +51,15 @@ export function AuthProvider({ children }) {
   }, [clearSession])
 
   const value = useMemo(
-    () => ({ user, isAdmin: user?.role === 'admin', login, register, logout }),
+    () => ({
+      user,
+      isAdmin: user?.role === 'admin',
+      // Admins can always delete; staff only when an admin granted the permission.
+      canDelete: user?.role === 'admin' || Boolean(user?.can_delete),
+      login,
+      register,
+      logout,
+    }),
     [user, login, register, logout],
   )
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

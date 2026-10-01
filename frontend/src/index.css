@@ -1022,3 +1022,8 @@ td > .badge:first-child {
     box-shadow: none;
   }
 }
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

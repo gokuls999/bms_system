@@ -22,13 +22,15 @@ A full-stack web app for managing **customers**, **products**, and **orders**. I
 | Action | Admin | Staff |
 |---|:-:|:-:|
 | View dashboard, customers, products, orders | ✅ | ✅ |
-| Create / edit / deactivate / delete customers | ✅ | ✅ |
+| Create / edit / view / deactivate customers | ✅ | ✅ |
 | Create orders | ✅ | ✅ |
 | Create / edit products and categories | ✅ | ✅ |
-| Delete products and categories | ✅ | ❌ |
-| Manage users (incl. **delete users**) | ✅ | ❌ |
+| **Delete** customers, products and categories | ✅ | ❌ (unless an Admin grants **Can delete**) |
+| Manage users (incl. **delete users**) | ✅ | ❌ (never) |
 
 Self-registration always creates a **Staff** account. Only an Admin can grant the Admin role.
+
+**Delete permission.** Staff manage records but cannot delete them by default. An Admin can tick **"Can delete customers, products and categories"** for an individual Staff member on the Users page (the `can_delete` field). This never allows deleting users; that stays Admin-only.
 
 ---
 
@@ -157,7 +159,7 @@ Trailing slashes on the auth and dashboard URLs are optional.
 | POST | `/auth/logout` | `{refresh}` | `205`; the refresh token is blacklisted |
 | GET | `/auth/me` | — | current user |
 
-### Customers (Admin, Staff)
+### Customers (Admin, Staff; delete needs delete permission)
 
 | Method | Endpoint | Notes |
 |---|---|---|
@@ -165,10 +167,10 @@ Trailing slashes on the auth and dashboard URLs are optional.
 | POST | `/customers/` | `{name, email, phone, address?, status?}` |
 | GET | `/customers/{id}/` | includes `order_count` |
 | PUT / PATCH | `/customers/{id}/` | |
-| DELETE | `/customers/{id}/` | `204`; **`409 protected`** if the customer has orders (deactivate instead) |
+| DELETE | `/customers/{id}/` | `204`; `403` for Staff without delete permission; **`409 protected`** if the customer has orders (deactivate instead) |
 | POST | `/customers/{id}/deactivate/` · `/activate/` | soft status change |
 
-### Categories & products (read, create, edit: Admin and Staff; delete: Admin only)
+### Categories & products (read, create, edit: Admin and Staff; delete needs delete permission)
 
 | Method | Endpoint | Notes |
 |---|---|---|
@@ -229,7 +231,7 @@ Duplicate product lines are merged. A flat discount cannot exceed the subtotal, 
 
 ### Users (Admin only)
 
-`GET/POST /users/`, `GET/PUT/PATCH/DELETE /users/{id}/`. Staff get `403`. An admin cannot delete their own account.
+`GET/POST /users/`, `GET/PUT/PATCH/DELETE /users/{id}/`. Staff get `403`. An admin cannot delete their own account. Set `"can_delete": true` on a Staff user to let them delete customers, products and categories.
 
 ### Errors
 

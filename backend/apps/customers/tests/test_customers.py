@@ -23,7 +23,12 @@ class CustomerAPITests(BaseAPITestCase):
         res = self.staff_client.post(f"/api/customers/{cid}/deactivate/")
         self.assertEqual(res.data["status"], "inactive")
 
-        self.assertEqual(self.staff_client.delete(f"/api/customers/{cid}/").status_code, status.HTTP_204_NO_CONTENT)
+        # Staff manage customers but cannot delete them...
+        res = self.staff_client.delete(f"/api/customers/{cid}/")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(res.data["code"], "permission_denied")
+        # ...admins can.
+        self.assertEqual(self.admin_client.delete(f"/api/customers/{cid}/").status_code, status.HTTP_204_NO_CONTENT)
         self.assertEqual(self.staff_client.get(f"/api/customers/{cid}/").status_code, status.HTTP_404_NOT_FOUND)
 
     def test_validation(self):
@@ -53,10 +58,21 @@ class CustomerAPITests(BaseAPITestCase):
     def test_cannot_delete_customer_with_orders(self):
         customer = make_customer()
         create_order(customer=customer, items=[{"product": make_product().pk, "quantity": 1}])
-        res = self.staff_client.delete(f"/api/customers/{customer.pk}/")
+        res = self.admin_client.delete(f"/api/customers/{customer.pk}/")
         self.assertEqual(res.status_code, status.HTTP_409_CONFLICT)
         self.assertEqual(res.data["code"], "protected")
         self.assertTrue(Customer.objects.filter(pk=customer.pk).exists())
+
+    def test_admin_can_grant_staff_delete_permission(self):
+        customer = make_customer()
+        self.assertEqual(self.staff_client.delete(f"/api/customers/{customer.pk}/").status_code, 403)
+
+        res = self.admin_client.patch(f"/api/users/{self.staff.pk}/", {"can_delete": True}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertTrue(res.data["can_delete"])
+
+        self.staff.refresh_from_db()
+        self.assertEqual(self.staff_client.delete(f"/api/customers/{customer.pk}/").status_code, 204)
 
     def test_not_found(self):
         res = self.staff_client.get("/api/customers/99999/")

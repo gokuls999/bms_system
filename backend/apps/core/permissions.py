@@ -14,15 +14,19 @@ class IsAdmin(BasePermission):
         return is_admin(request.user)
 
 
-class IsAdminToDelete(BasePermission):
-    """Any authenticated user can read, create and edit; only Admins can delete."""
+class CanDeleteRecords(BasePermission):
+    """
+    Any authenticated user can read, create and edit. Deleting requires the Admin
+    role, or a Staff account that an Admin has granted the `can_delete` permission.
+    """
 
-    message = "Only administrators can delete this resource."
+    message = "You don't have permission to delete this. Ask an administrator."
 
     def has_permission(self, request, view):
-        if not (request.user and request.user.is_authenticated):
+        user = request.user
+        if not (user and user.is_authenticated):
             return False
-        return request.method != "DELETE" or is_admin(request.user)
+        return request.method != "DELETE" or getattr(user, "can_delete_records", False)
 
 
 class IsAdminOrReadOnly(BasePermission):

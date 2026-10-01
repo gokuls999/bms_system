@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
+import { useAuth } from '../auth/AuthContext'
 import { useToast } from '../components/Toast'
 import { ConfirmDialog, EmptyState, ErrorBanner, Field, Loader, Modal, Pagination, StatusBadge } from '../components/ui'
 import useDebounce from '../hooks/useDebounce'
@@ -152,6 +153,7 @@ function CustomerView({ id, onClose, onEdit }) {
 }
 
 export default function Customers() {
+  const { canDelete } = useAuth()
   const notify = useToast()
   const [search, setSearch] = useState('')
   const [status, setStatus] = useState('')
@@ -253,12 +255,14 @@ export default function Customers() {
                           Activate
                         </button>
                       )}
-                      <button
-                        className="btn btn-ghost btn-sm text-danger"
-                        onClick={() => setConfirm({ type: 'delete', customer: c })}
-                      >
-                        Delete
-                      </button>
+                      {canDelete && (
+                        <button
+                          className="btn btn-ghost btn-sm text-danger"
+                          onClick={() => setConfirm({ type: 'delete', customer: c })}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}

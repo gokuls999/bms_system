@@ -160,7 +160,7 @@ function CategoryManager({ categories, canDelete, onClose, onChanged }) {
 }
 
 export default function Products() {
-  const { isAdmin } = useAuth()
+  const { canDelete } = useAuth()
   const notify = useToast()
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState('')
@@ -281,7 +281,7 @@ export default function Products() {
                       <button className="btn btn-ghost btn-sm" onClick={() => setEditing(p)}>
                         Edit
                       </button>
-                      {isAdmin && (
+                      {canDelete && (
                         <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeleting(p)}>
                           Delete
                         </button>
@@ -324,7 +324,7 @@ export default function Products() {
       {managingCategories && (
         <CategoryManager
           categories={categories}
-          canDelete={isAdmin}
+          canDelete={canDelete}
           onClose={() => setManagingCategories(false)}
           onChanged={loadCategories}
         />

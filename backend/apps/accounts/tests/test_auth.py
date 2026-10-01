@@ -76,6 +76,22 @@ class RoleTests(BaseAPITestCase):
         self.assertEqual(self.staff_client.get("/api/users/").status_code, status.HTTP_403_FORBIDDEN)
         self.assertTrue(User.objects.filter(pk=victim.pk).exists())
 
+    def test_delete_permission_never_allows_deleting_users(self):
+        self.staff.can_delete = True
+        self.staff.save()
+        victim = User.objects.create_user(username="victim", email="v@test.local", password="x")
+        self.assertEqual(self.staff_client.delete(f"/api/users/{victim.pk}/").status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_staff_cannot_grant_themselves_delete_permission(self):
+        res = self.staff_client.patch(f"/api/users/{self.staff.pk}/", {"can_delete": True}, format="json")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        res = self.anon_client.post(
+            "/api/auth/register",
+            {"username": "sneaky", "email": "s@test.local", "password": "Sup3r!Secret", "can_delete": True},
+            format="json",
+        )
+        self.assertFalse(User.objects.get(username="sneaky").can_delete)
+
     def test_admin_can_delete_users_but_not_self(self):
         victim = User.objects.create_user(username="victim", email="v@test.local", password="x")
         self.assertEqual(self.admin_client.delete(f"/api/users/{victim.pk}/").status_code, status.HTTP_204_NO_CONTENT)

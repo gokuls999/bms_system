@@ -37,8 +37,14 @@ class ProductAPITests(BaseAPITestCase):
 
         res = self.staff_client.delete(f"/api/products/{pid}/")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(res.data["detail"], "Only administrators can delete this resource.")
+        self.assertEqual(res.data["code"], "permission_denied")
         self.assertTrue(Product.objects.filter(pk=pid).exists())
+
+    def test_staff_with_delete_permission_can_delete_product(self):
+        self.staff.can_delete = True
+        self.staff.save()
+        product = make_product(category=self.category)
+        self.assertEqual(self.staff_client.delete(f"/api/products/{product.pk}/").status_code, 204)
 
     def test_staff_categories_create_but_not_delete(self):
         res = self.staff_client.post("/api/categories/", {"name": "Toys"}, format="json")

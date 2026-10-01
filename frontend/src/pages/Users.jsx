@@ -8,7 +8,16 @@ import useList from '../hooks/useList'
 import usePage from '../hooks/usePage'
 import { errorMessage, fieldErrors, formatDate } from '../utils/format'
 
-const EMPTY = { username: '', email: '', first_name: '', last_name: '', role: 'staff', is_active: true, password: '' }
+const EMPTY = {
+  username: '',
+  email: '',
+  first_name: '',
+  last_name: '',
+  role: 'staff',
+  can_delete: false,
+  is_active: true,
+  password: '',
+}
 
 function UserForm({ user, onClose, onSaved }) {
   const notify = useToast()
@@ -80,9 +89,17 @@ function UserForm({ user, onClose, onSaved }) {
             <input type="password" value={form.password} onChange={set('password')} required={!user} autoComplete="new-password" />
           </Field>
         </div>
-        <label className="checkbox">
-          <input type="checkbox" checked={form.is_active} onChange={set('is_active')} /> Active (can sign in)
-        </label>
+        <div className="checkbox-group">
+          <label className="checkbox">
+            <input type="checkbox" checked={form.is_active} onChange={set('is_active')} /> Active (can sign in)
+          </label>
+          {form.role === 'staff' && (
+            <label className="checkbox">
+              <input type="checkbox" checked={form.can_delete} onChange={set('can_delete')} /> Can delete customers,
+              products and categories
+            </label>
+          )}
+        </div>
       </form>
     </Modal>
   )
@@ -152,6 +169,7 @@ export default function Users() {
                     <td className="hide-md">{u.email}</td>
                     <td>
                       <span className={`role role-${u.role}`}>{u.role}</span>
+                      {u.role === 'staff' && u.can_delete && <span className="badge badge-active">Can delete</span>}
                     </td>
                     <td className="hide-md muted">{formatDate(u.date_joined)}</td>
                     <td className="actions">
