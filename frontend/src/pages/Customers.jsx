@@ -1,14 +1,23 @@
-import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { Eye, Pencil, Plus, Search, Trash2, UserCheck, UserX } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import api from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import RowActions from '../components/RowActions'
 import { useToast } from '../components/Toast'
 import { ConfirmDialog, EmptyState, ErrorBanner, Field, Loader, Modal, Pagination, StatusBadge } from '../components/ui'
 import useDebounce from '../hooks/useDebounce'
 import useList from '../hooks/useList'
 import usePage from '../hooks/usePage'
 import { errorMessage, fieldErrors, formatDate, formatDateTime, formatINR } from '../utils/format'
+
+const initials = (name = '') =>
+  name
+    .split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase()
 
 const EMPTY = { name: '', email: '', phone: '', address: '', status: 'active' }
 
@@ -99,6 +108,7 @@ function CustomerView({ id, onClose, onEdit }) {
 
   return (
     <Modal
+      drawer
       title="Customer details"
       onClose={onClose}
       footer={
@@ -231,17 +241,20 @@ export default function Customers() {
                   <th className="hide-md">Phone</th>
                   <th>Status</th>
                   <th className="hide-md">Created</th>
-                  <th className="actions-col">Actions</th>
+                  <th className="actions-col" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
                 {data.results.map((c) => (
-                  <tr key={c.id}>
+                  <tr key={c.id} className="row-link" onClick={() => setViewing(c.id)}>
                     <td>
-                      <button className="link-btn strong" onClick={() => setViewing(c.id)}>
-                        {c.name}
-                      </button>
-                      <div className="show-sm muted small">{c.email}</div>
+                      <div className="cell-person">
+                        <span className="avatar-sm">{initials(c.name)}</span>
+                        <span className="cell-person-text">
+                          <strong>{c.name}</strong>
+                          <small className="show-sm muted">{c.email}</small>
+                        </span>
+                      </div>
                     </td>
                     <td className="hide-sm">{c.email}</td>
                     <td className="hide-md">{c.phone}</td>
@@ -250,26 +263,24 @@ export default function Customers() {
                     </td>
                     <td className="hide-md muted">{formatDate(c.created_at)}</td>
                     <td className="actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditing(c)}>
-                        <Pencil size={14} /> Edit
-                      </button>
-                      {c.status === 'active' ? (
-                        <button className="btn btn-ghost btn-sm" onClick={() => setConfirm({ type: 'deactivate', customer: c })}>
-                          Deactivate
-                        </button>
-                      ) : (
-                        <button className="btn btn-ghost btn-sm" onClick={() => setConfirm({ type: 'activate', customer: c })}>
-                          Activate
-                        </button>
-                      )}
-                      {canDelete && (
-                        <button
-                          className="btn btn-ghost btn-sm text-danger"
-                          onClick={() => setConfirm({ type: 'delete', customer: c })}
-                        >
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      )}
+                      <RowActions
+                        label={`Actions for ${c.name}`}
+                        items={[
+                          { label: 'View details', icon: Eye, onClick: () => setViewing(c.id) },
+                          { label: 'Edit', icon: Pencil, onClick: () => setEditing(c) },
+                          c.status === 'active'
+                            ? { label: 'Mark as inactive', icon: UserX, onClick: () => setConfirm({ type: 'deactivate', customer: c }) }
+                            : { label: 'Mark as active', icon: UserCheck, onClick: () => setConfirm({ type: 'activate', customer: c }) },
+                          'divider',
+                          {
+                            label: 'Delete',
+                            icon: Trash2,
+                            danger: true,
+                            hidden: !canDelete,
+                            onClick: () => setConfirm({ type: 'delete', customer: c }),
+                          },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -309,13 +320,14 @@ export default function Customers() {
           }
           message={
             confirm.type === 'delete'
-              ? `Permanently delete ${confirm.customer.name}? Customers with orders cannot be deleted - deactivate them instead.`
+              ? `This permanently deletes ${confirm.customer.name} and cannot be undone. Customers with orders cannot be deleted - mark them inactive instead.`
               : confirm.type === 'deactivate'
                 ? `${confirm.customer.name} will no longer be selectable for new orders.`
                 : `${confirm.customer.name} will be available for new orders again.`
           }
           confirmLabel={confirm.type === 'delete' ? 'Delete' : confirm.type === 'deactivate' ? 'Deactivate' : 'Activate'}
           danger={confirm.type !== 'activate'}
+          requireText={confirm.type === 'delete' ? confirm.customer.name : undefined}
           busy={busy}
           onConfirm={runConfirm}
           onClose={() => setConfirm(null)}

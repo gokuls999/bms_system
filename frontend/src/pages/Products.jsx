@@ -1,8 +1,9 @@
-import { Pencil, Plus, Search, Tags, Trash2 } from 'lucide-react'
+import { CircleCheck, CircleOff, Pencil, Plus, Search, Tags, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import api from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import RowActions from '../components/RowActions'
 import { useToast } from '../components/Toast'
 import { ConfirmDialog, EmptyState, ErrorBanner, Field, Loader, Modal, Pagination, StatusBadge } from '../components/ui'
 import useDebounce from '../hooks/useDebounce'
@@ -206,6 +207,17 @@ export default function Products() {
   useEffect(() => {
     loadCategories()
   }, [loadCategories])
+  const setStatus_ = async (product, next) => {
+    try {
+      await api.patch(`/products/${product.id}/`, { status: next, expected_updated_at: product.updated_at })
+      notify(next === 'active' ? 'Product marked as active.' : 'Product marked as inactive.')
+      reload()
+    } catch (err) {
+      notify(errorMessage(err), 'error')
+      reload()
+    }
+  }
+
   const doDelete = async () => {
     setBusy(true)
     try {
@@ -281,12 +293,12 @@ export default function Products() {
                   <th className="num">Price</th>
                   <th className="num">Stock</th>
                   <th className="hide-sm">Status</th>
-                  <th className="actions-col">Actions</th>
+                  <th className="actions-col" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
                 {data.results.map((p) => (
-                  <tr key={p.id}>
+                  <tr key={p.id} className="row-link" onClick={() => setEditing(p)}>
                     <td>
                       <strong>{p.name}</strong>
                       <div className="show-sm muted small mono">{p.sku}</div>
@@ -303,14 +315,17 @@ export default function Products() {
                       <StatusBadge status={p.status} />
                     </td>
                     <td className="actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditing(p)}>
-                        <Pencil size={14} /> Edit
-                      </button>
-                      {canDelete && (
-                        <button className="btn btn-ghost btn-sm text-danger" onClick={() => setDeleting(p)}>
-                          <Trash2 size={14} /> Delete
-                        </button>
-                      )}
+                      <RowActions
+                        label={`Actions for ${p.name}`}
+                        items={[
+                          { label: 'Edit', icon: Pencil, onClick: () => setEditing(p) },
+                          p.status === 'active'
+                            ? { label: 'Mark as inactive', icon: CircleOff, onClick: () => setStatus_(p, 'inactive') }
+                            : { label: 'Mark as active', icon: CircleCheck, onClick: () => setStatus_(p, 'active') },
+                          'divider',
+                          { label: 'Delete', icon: Trash2, danger: true, hidden: !canDelete, onClick: () => setDeleting(p) },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -338,7 +353,8 @@ export default function Products() {
       {deleting && (
         <ConfirmDialog
           title="Delete product"
-          message={`Delete ${deleting.name} (${deleting.sku})? Products that appear in orders cannot be deleted - mark them inactive instead.`}
+          message={`This permanently deletes ${deleting.name} (${deleting.sku}) and cannot be undone. Products that appear in orders cannot be deleted - mark them inactive instead.`}
+          requireText={deleting.sku}
           confirmLabel="Delete"
           danger
           busy={busy}

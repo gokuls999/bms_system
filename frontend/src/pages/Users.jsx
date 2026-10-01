@@ -2,6 +2,7 @@ import { Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import api from '../api/client'
 import { useAuth } from '../auth/AuthContext'
+import RowActions from '../components/RowActions'
 import { useToast } from '../components/Toast'
 import { ConfirmDialog, EmptyState, ErrorBanner, Field, Loader, Modal, Pagination } from '../components/ui'
 import useDebounce from '../hooks/useDebounce'
@@ -162,12 +163,12 @@ export default function Users() {
                   <th className="hide-md">Email</th>
                   <th>Role</th>
                   <th className="hide-md">Joined</th>
-                  <th className="actions-col">Actions</th>
+                  <th className="actions-col" aria-label="Actions" />
                 </tr>
               </thead>
               <tbody>
                 {data.results.map((u) => (
-                  <tr key={u.id}>
+                  <tr key={u.id} className="row-link" onClick={() => setEditing(u)}>
                     <td>
                       <strong>{u.username}</strong>
                       {!u.is_active && <span className="badge badge-inactive">Disabled</span>}
@@ -180,17 +181,14 @@ export default function Users() {
                     </td>
                     <td className="hide-md muted">{formatDate(u.date_joined)}</td>
                     <td className="actions">
-                      <button className="btn btn-ghost btn-sm" onClick={() => setEditing(u)}>
-                        <Pencil size={14} /> Edit
-                      </button>
-                      <button
-                        className="btn btn-ghost btn-sm text-danger"
-                        disabled={u.id === me.id}
-                        title={u.id === me.id ? 'You cannot delete yourself' : undefined}
-                        onClick={() => setDeleting(u)}
-                      >
-                        <Trash2 size={14} /> Delete
-                      </button>
+                      <RowActions
+                        label={`Actions for ${u.username}`}
+                        items={[
+                          { label: 'Edit user', icon: Pencil, onClick: () => setEditing(u) },
+                          'divider',
+                          { label: 'Delete user', icon: Trash2, danger: true, hidden: u.id === me.id, onClick: () => setDeleting(u) },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -215,7 +213,8 @@ export default function Users() {
       {deleting && (
         <ConfirmDialog
           title="Delete user"
-          message={`Delete ${deleting.username}? Their past orders are kept.`}
+          message={`This permanently deletes the account ${deleting.username}. Their past orders are kept.`}
+          requireText={deleting.username}
           confirmLabel="Delete"
           danger
           busy={busy}
