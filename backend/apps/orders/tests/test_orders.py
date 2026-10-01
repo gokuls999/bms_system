@@ -136,3 +136,5 @@ class OrderAPITests(BaseAPITestCase):
         self.assertEqual(data["low_stock_count"], 2)  # stock 3 and 9, threshold 10
         self.assertEqual(data["recent_orders"][0]["customer_name"], "Arun")
         self.assertEqual(len(data["sales_trend"]), 14)
+        self.assertEqual(data["top_products"][0]["product_name"], "Product A")  # ₹1000 revenue beats ₹300
+        self.assertEqual(data["top_products"][0]["quantity"], 2)

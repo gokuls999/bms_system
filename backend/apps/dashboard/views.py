@@ -10,7 +10,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from apps.customers.models import Customer
-from apps.orders.models import Order
+from apps.orders.models import Order, OrderItem
 from apps.orders.serializers import OrderListSerializer
 from apps.products.models import Product
 from apps.products.serializers import ProductSerializer
@@ -56,6 +56,13 @@ class DashboardView(APIView):
             for day in (start + timedelta(days=i) for i in range(SALES_TREND_DAYS))
         ]
 
+        top_products = [
+            {**row, "revenue": _money(row["revenue"])}
+            for row in OrderItem.objects.values("product_id", "product_name", "sku")
+            .annotate(quantity=Sum("quantity"), revenue=Sum("line_total"))
+            .order_by("-revenue")[:5]
+        ]
+
         return Response(
             {
                 "total_customers": Customer.objects.count(),
@@ -68,5 +75,6 @@ class DashboardView(APIView):
                 "total_sales": _money(order_stats["sales"]),
                 "recent_orders": OrderListSerializer(recent_orders, many=True).data,
                 "sales_trend": sales_trend,
+                "top_products": top_products,
             }
         )

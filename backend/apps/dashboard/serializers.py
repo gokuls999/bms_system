@@ -12,6 +12,14 @@ class SalesTrendPointSerializer(serializers.Serializer):
     orders = serializers.IntegerField()
 
 
+class TopProductSerializer(serializers.Serializer):
+    product_id = serializers.IntegerField()
+    product_name = serializers.CharField()
+    sku = serializers.CharField()
+    quantity = serializers.IntegerField()
+    revenue = serializers.DecimalField(max_digits=14, decimal_places=2)
+
+
 class DashboardSerializer(serializers.Serializer):
     total_customers = serializers.IntegerField()
     active_customers = serializers.IntegerField()
@@ -23,3 +31,4 @@ class DashboardSerializer(serializers.Serializer):
     total_sales = serializers.DecimalField(max_digits=14, decimal_places=2)
     recent_orders = OrderListSerializer(many=True)
     sales_trend = SalesTrendPointSerializer(many=True)
+    top_products = TopProductSerializer(many=True)
