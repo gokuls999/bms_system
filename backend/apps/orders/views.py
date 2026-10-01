@@ -61,11 +61,15 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Crea
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         lines, totals = services.preview_order(**serializer.validated_data)
+        # Render money as fixed-point strings, like every other endpoint ("500.00").
+        for line in lines:
+            line["unit_price"] = f"{line['unit_price']:.2f}"
+            line["line_total"] = f"{line['line_total']:.2f}"
         return Response(
             {
                 "items": lines,
-                "subtotal": totals.subtotal,
-                "discount_amount": totals.discount_amount,
-                "total_amount": totals.total_amount,
+                "subtotal": f"{totals.subtotal:.2f}",
+                "discount_amount": f"{totals.discount_amount:.2f}",
+                "total_amount": f"{totals.total_amount:.2f}",
             }
         )

@@ -74,7 +74,9 @@ class OrderAPITests(BaseAPITestCase):
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_validation_errors(self):
-        self.assertEqual(self.post_order([]).status_code, status.HTTP_400_BAD_REQUEST)
+        res = self.post_order([])
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.data["errors"]["items"], ["An order must contain at least one product."])
         res = self.post_order([{"product": self.a.pk, "quantity": 0}])
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
         res = self.post_order([{"product": 99999, "quantity": 1}])
@@ -103,7 +105,8 @@ class OrderAPITests(BaseAPITestCase):
             format="json",
         )
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.data)
-        self.assertEqual(str(res.data["total_amount"]), "900.00")
+        self.assertEqual(res.data["total_amount"], "900.00")
+        self.assertEqual(res.data["items"][0]["unit_price"], "500.00")
         self.assertEqual(Order.objects.count(), 0)
 
     def test_list_filter_and_404(self):

@@ -59,7 +59,8 @@ class OrderLineInputSerializer(serializers.Serializer):
 
 
 class _OrderInputBase(serializers.Serializer):
-    items = OrderLineInputSerializer(many=True, allow_empty=False)
+    # Emptiness is checked in validate_items so the client gets a friendly message.
+    items = OrderLineInputSerializer(many=True)
     discount_type = serializers.ChoiceField(choices=Order.DiscountType.choices, default=Order.DiscountType.AMOUNT)
     discount_value = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=0, default=0)
 
