@@ -1,5 +1,6 @@
 from django.db.models import Count
-from rest_framework import mixins, status, viewsets
+from drf_spectacular.utils import extend_schema, inline_serializer
+from rest_framework import mixins, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -48,6 +49,7 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Crea
         qs = super().filter_queryset(queryset)
         return qs.distinct() if self.request.query_params.get("search") else qs
 
+    @extend_schema(request=OrderCreateSerializer, responses={201: OrderDetailSerializer})
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -55,6 +57,19 @@ class OrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.Crea
         order = self.get_queryset().prefetch_related("items").get(pk=order.pk)
         return Response(OrderDetailSerializer(order).data, status=status.HTTP_201_CREATED)
 
+    @extend_schema(
+        request=OrderPreviewSerializer,
+        responses=inline_serializer(
+            "OrderPreview",
+            {
+                "items": serializers.ListField(child=serializers.DictField()),
+                "subtotal": serializers.CharField(),
+                "discount_amount": serializers.CharField(),
+                "total_amount": serializers.CharField(),
+            },
+        ),
+        summary="Calculate totals and check stock without creating an order",
+    )
     @action(detail=False, methods=["post"])
     def preview(self, request):
         """Server-side price calculation + stock check without creating anything."""

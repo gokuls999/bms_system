@@ -4,6 +4,8 @@ A full-stack web app for managing **customers**, **products**, and **orders**. I
 
 **Live demo (AWS EC2):** https://bms.52-62-250-109.sslip.io. Log in as `admin` / `Admin@12345` or `staff` / `Staff@12345`. Deployment details are in [section 11](#11-deployment-aws).
 
+**Interactive API docs (Swagger):** https://bms.52-62-250-109.sslip.io/api/docs/
+
 ---
 
 ## 1. Project overview
@@ -140,6 +142,8 @@ Customer ──< Order ──< OrderItem >── Product >── Category
 ---
 
 ## 6. API documentation
+
+**Interactive docs:** open **`/api/docs/`** (Swagger UI, generated with drf-spectacular), e.g. https://bms.52-62-250-109.sslip.io/api/docs/ or http://localhost:8000/api/docs/ locally. To try protected endpoints there, call `POST /api/auth/login`, click **Authorize** and paste the `access` token. The raw OpenAPI 3 schema is at `/api/schema/`.
 
 Base URL: `http://localhost:8000/api`. Every endpoint except register, login and refresh needs this header:
 

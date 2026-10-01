@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_filters",
+    "drf_spectacular",
     # Local
     "apps.core",
     "apps.accounts",
@@ -148,6 +149,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPagination",
     "PAGE_SIZE": 10,
     "EXCEPTION_HANDLER": "apps.core.exceptions.api_exception_handler",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_RENDERER_CLASSES": ["rest_framework.renderers.JSONRenderer"]
     + (["rest_framework.renderers.BrowsableAPIRenderer"] if DEBUG else []),
 }
@@ -159,6 +161,19 @@ SIMPLE_JWT = {
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": True,
     "AUTH_HEADER_TYPES": ("Bearer",),
+}
+
+# --- API documentation (OpenAPI / Swagger UI at /api/docs/) -------------------
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Mini Business Management System API",
+    "DESCRIPTION": (
+        "REST API for customers, products and orders. Log in with POST /api/auth/login, "
+        "then click **Authorize** and paste the `access` token."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SWAGGER_UI_SETTINGS": {"persistAuthorization": True, "displayRequestDuration": True},
 }
 
 # --- CORS ---------------------------------------------------------------------

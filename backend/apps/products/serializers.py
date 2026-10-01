@@ -68,7 +68,7 @@ class ProductSerializer(serializers.ModelSerializer):
             },
         }
 
-    def get_is_low_stock(self, obj):
+    def get_is_low_stock(self, obj) -> bool:
         return obj.stock_quantity <= settings.LOW_STOCK_THRESHOLD
 
     def validate_name(self, value):

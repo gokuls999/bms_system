@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.http import JsonResponse
 from django.urls import include, path, re_path
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 
 from apps.accounts.views import UserViewSet
@@ -25,6 +26,8 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/auth/", include("apps.accounts.urls")),
     re_path(r"^api/dashboard/?$", DashboardView.as_view(), name="dashboard"),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="api-docs"),
     path("api/", include(router.urls)),
     re_path(r"^api/.*$", api_not_found),
 ]

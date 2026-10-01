@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, mixins, permissions, serializers, status, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -30,6 +31,7 @@ class LogoutSerializer(serializers.Serializer):
 class LogoutView(APIView):
     """Blacklists the refresh token so it can no longer mint access tokens."""
 
+    @extend_schema(request=LogoutSerializer, responses={205: None}, summary="Log out (revoke refresh token)")
     def post(self, request):
         serializer = LogoutSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

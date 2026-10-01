@@ -5,6 +5,7 @@ from django.conf import settings
 from django.db.models import Count, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
+from drf_spectacular.utils import extend_schema
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -13,6 +14,8 @@ from apps.orders.models import Order
 from apps.orders.serializers import OrderListSerializer
 from apps.products.models import Product
 from apps.products.serializers import ProductSerializer
+
+from .serializers import DashboardSerializer
 
 SALES_TREND_DAYS = 14
 
@@ -23,6 +26,7 @@ def _money(value):
 
 
 class DashboardView(APIView):
+    @extend_schema(responses=DashboardSerializer, summary="Business summary for the dashboard")
     def get(self, request):
         threshold = settings.LOW_STOCK_THRESHOLD
         low_stock_qs = Product.objects.select_related("category").filter(

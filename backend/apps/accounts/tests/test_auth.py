@@ -107,6 +107,12 @@ class RoleTests(BaseAPITestCase):
         self.assertEqual(res.status_code, status.HTTP_201_CREATED, res.data)
         self.assertEqual(res.data["role"], "admin")
 
+    def test_api_docs_and_schema_are_served(self):
+        self.assertEqual(self.anon_client.get("/api/docs/").status_code, status.HTTP_200_OK)
+        res = self.anon_client.get("/api/schema/?format=json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("/api/orders/", res.json()["paths"])
+
     def test_unknown_api_route_is_json_404(self):
         res = self.admin_client.get("/api/nope/")
         self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
