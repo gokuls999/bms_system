@@ -40,10 +40,11 @@ Self-registration always creates a **Staff** account. Only an Admin can grant th
 
 | Layer | Technology |
 |---|---|
-| Backend | Python 3.12+, **Django 6**, **Django REST Framework**, `djangorestframework-simplejwt` (with token blacklist), `django-filter`, `django-cors-headers` |
+| Backend | Python 3.12+, **Django 6**, **Django REST Framework**, `djangorestframework-simplejwt` (with token blacklist), `django-filter`, `django-cors-headers`, `drf-spectacular` (OpenAPI + Swagger UI) |
 | Database | **PostgreSQL** (tested with 16), via `psycopg` 3 |
 | Frontend | **React 19**, **Vite 8**, React Router 7, Axios, plain CSS (responsive, no UI framework) |
-| Testing | Django test runner / DRF `APITestCase`, plus a multi-threaded concurrency test against PostgreSQL |
+| Testing | Django test runner / DRF `APITestCase`, plus multi-threaded concurrency tests against PostgreSQL |
+| Deployment | **AWS EC2**, Docker Compose, Caddy (automatic HTTPS), Gunicorn, **GitHub Actions** (test, then auto-deploy) |
 
 ---
 
@@ -318,7 +319,7 @@ With stock = 5, **User A orders 4** and **User B orders 3** at the same moment. 
 - the exact 5 / 4 / 3 scenario: exactly one order succeeds;
 - 25 concurrent single-unit orders against stock 10: exactly 10 succeed and the final stock is 0.
 
-I chose pessimistic locking over optimistic versioning because an order is a short transaction that often touches several rows, and blocking briefly is simpler and fairer than retry loops. Two alternatives were considered: a single conditional `UPDATE … WHERE stock >= n` works for one product but makes multi-product orders awkward to report and roll back, and `SERIALIZABLE` isolation would need retry handling for every request.
+For orders I chose pessimistic locking over optimistic versioning because an order is a short transaction that often touches several rows, and blocking briefly is simpler and fairer than retry loops. Two alternatives were considered: a single conditional `UPDATE … WHERE stock >= n` works for one product but makes multi-product orders awkward to report and roll back, and `SERIALIZABLE` isolation would need retry handling for every request.
 
 ### Edits racing with orders (optimistic locking)
 
@@ -402,7 +403,14 @@ Browser ──HTTPS──> Elastic IP 52.62.250.109  (EC2 t3.micro, Ubuntu 24.04
    ```
 3. The script prints the site address. Secrets (Django key, database password) are generated into `deploy/.env` on the server and never committed.
 
-### Update after a push
+### Continuous deployment (GitHub Actions)
+
+Every push to `main` runs [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml):
+
+1. **test**: the full backend test suite on a **PostgreSQL 16** service container (including the concurrency tests), and a production build of the frontend;
+2. **deploy**: only if tests pass, it connects to EC2 over SSH, resets the checkout to `origin/main` and runs `docker compose up -d --build`.
+
+A failing test never reaches the live site. Two repository secrets are required: `EC2_HOST` (the Elastic IP) and `EC2_SSH_KEY` (the instance's private key). To redeploy manually instead:
 
 ```bash
 cd ~/bms_system && git pull && cd deploy && sudo docker compose up -d --build
@@ -414,7 +422,7 @@ cd ~/bms_system && git pull && cd deploy && sudo docker compose up -d --build
 cd ~/bms_system/deploy && sudo docker compose exec backend python manage.py test
 ```
 
-On PostgreSQL all 38 tests run, including the two concurrency tests that SQLite skips.
+On PostgreSQL every test runs, including the two concurrency tests that SQLite skips.
 
 ### Use a custom domain
 
